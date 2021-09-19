@@ -63,6 +63,39 @@ def getWordTagCount(_corpus):
 
     return word_map, tag_map
 
+def viterbi(obs, pi, A, B):
+    """
+    Finds the viterbi solution for a hidden markov model 
+    Returns -> list of ints
+    Optimal state sequence corresponding to the viterbi solution
+    Parameters: 
+    obs -> List of ints
+    List of observations
+    pi -> numpy.array of dim (number of states)
+    Initial probabilities of states
+    A -> numpy.array (number of states, number of states)
+    Transition Probability  Matrix
+    B -> numpy.array(number of states, number of possible observations)
+    Emmission Probability Marix
+    """
+    pi = np.log(pi)
+    A = np.log(A)
+    B = np.log(B)
+
+    v = np.zeros([A.shape[0], len(obs)])
+    r = np.zeros([A.shape[0], len(obs)]) - 1
+    v = pi + B[:, obs[0]]
+    r[:,0] = np.arange(A.shape[0])
+    
+    for t in range(1, len(obs)):
+        vab = np.expand_dims(v, 1) + A + B[:,obs[t]:(obs[t]+1)]
+        v = np.amax(vab, 0)
+        r[:,t] = np.argmax(vab, 0)
+    return list(r[v.argmax(),:])[::-1]
+
+
+
+
 if __name__ == "__main__":
     nltk.download('brown')
     nltk.download('universal_tagset')

@@ -5,9 +5,9 @@ import numpy as np
 from numpy.lib.index_tricks import index_exp
 
 
-def genMatrix(_corpus):
+def genMatrix(_corpus, wordMap, tagMap):
     # count the unque words in the corpus, and make these words a list of mapping of idx and word
-    wordMap, tagMap = getWordTagCount(_corpus)
+    #wordMap, tagMap = getWordTagCount(_corpus)
     matState = np.zeros((len(tagMap), len(tagMap)))
     matObs = np.zeros((len(tagMap), len(wordMap)))
     initState = np.zeros(len(tagMap))
@@ -36,6 +36,7 @@ def genMatrix(_corpus):
         # Take the first element of the tuple of the 10000 sentences 
         initState[tagMap.index(sentence[0][1])] += 1 
         pass
+    
     # implementing smoothing for the 2 matrix and 1 list so that we won't enounter log0 issue
     matState += 1
     matObs += 1
@@ -60,6 +61,7 @@ def getWordTagCount(_corpus):
         pass
     word_map = sorted(set(word_map))
     tag_map = sorted(set(tag_map))
+    word_map.append("OOV") 
 
     return word_map, tag_map
 
@@ -100,11 +102,27 @@ def viterbi(obs, pi, A, B):
         pass
     return list(z)
     
+def predict(new_sentences, mat_state, mat_obs, init_state, wordMap, tagMap):
+    viterbi_outs = [None]*len(new_sentences)
+    correct_solns= [None]*len(new_sentences)
+    for i,sentence in enumerate(new_sentences):
+        obs = [wordMap.index(tWordtag[0]) if tWordtag[0] in wordMap else (len(wordMap)-1)  for tWordtag in sentence]
+        viterbi_outs[i] = viterbi(obs, init_state, mat_state, mat_obs)
+        viterbi_outs[i] = [tagMap[j] for j in viterbi_outs[i]]
+        correct_solns[i] = [tWordtag[1] for tWordtag in sentence]
+        pretty_print([i[0] for i in sentence], correct_solns[i], viterbi_outs[i])
+    return viterbi_outs
 
-
+def pretty_print(sentence, correct, ours):
+    for i in range(len(sentence)):
+        print(f'{sentence[i]:>25}',f'{correct[i]:>25}',f'{ours[i]:>25}', "   ",correct[i]==ours[i])
 
 if __name__ == "__main__":
     nltk.download('brown')
     nltk.download('universal_tagset')
     corpus = nltk.corpus.brown.tagged_sents(tagset='universal')[:10000]
-    mat_state, mat_obs, init_state = genMatrix(corpus)
+    wordMap, tagMap = getWordTagCount(corpus)
+    mat_state, mat_obs, init_state = genMatrix(corpus, wordMap, tagMap)
+    corpus_test = nltk.corpus.brown.tagged_sents(tagset='universal')[10150:10153]
+    
+    predictions = predict(corpus_test, mat_state, mat_obs, init_state, wordMap, tagMap)

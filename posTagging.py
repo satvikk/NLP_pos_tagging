@@ -87,7 +87,7 @@ def viterbi(obs, pi, A, B):
     v = pi + B[:, obs[0]]
     r[:,0] = np.arange(A.shape[0])
     
-    for t in range(1, len(obs)):
+    for t in range(0, len(obs)):
         vab = np.expand_dims(v, 1) + A + B[:,obs[t]:(obs[t]+1)]
         v = np.amax(vab, 0)
         r[:,t] = np.argmax(vab, 0)
@@ -95,8 +95,8 @@ def viterbi(obs, pi, A, B):
 
     z = [0]*len(obs)
     z[-1] = v.argmax(0)
-    for t in range(len(obs)-1, 0, -1):
-        z[t-1] = int(r[z[t], t])
+    for t in range(len(obs)-1, -1, -1):
+        z[t] = int(r[z[t], t])
         pass
     return list(z)
     

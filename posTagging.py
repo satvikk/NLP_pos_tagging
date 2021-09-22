@@ -103,19 +103,35 @@ def viterbi(obs, pi, A, B):
     return list(z)
     
 def predict(new_sentences, mat_state, mat_obs, init_state, wordMap, tagMap):
+    total_right, total_len = 0, 0
     viterbi_outs = [None]*len(new_sentences)
-    correct_solns= [None]*len(new_sentences)
+    correct_solns = [None]*len(new_sentences)
+
+    print(f'{"INPUT":>25}',f'{"ANSWER":>25}',f'{"INFERENCE":>25}')
+    print(f'{"="*100}')
+
     for i,sentence in enumerate(new_sentences):
         obs = [wordMap.index(tWordtag[0]) if tWordtag[0] in wordMap else (len(wordMap)-1)  for tWordtag in sentence]
         viterbi_outs[i] = viterbi(obs, init_state, mat_state, mat_obs)
         viterbi_outs[i] = [tagMap[j] for j in viterbi_outs[i]]
         correct_solns[i] = [tWordtag[1] for tWordtag in sentence]
-        pretty_print([i[0] for i in sentence], correct_solns[i], viterbi_outs[i])
+        # print("Test: " + str(i) + str(sentence))
+        # print([i[0] for i in sentence])
+        total_right += sol_Evaluation([i[0] for i in sentence], correct_solns[i], viterbi_outs[i])
+        total_len += len(sentence)
+        pass
+    print ("Overall Accuracy: " + str(round(100*total_right/total_len,2)) + "%")
     return viterbi_outs
 
-def pretty_print(sentence, correct, ours):
+def sol_Evaluation(sentence, correct, ours):
+    count_right = 0
     for i in range(len(sentence)):
         print(f'{sentence[i]:>25}',f'{correct[i]:>25}',f'{ours[i]:>25}', "   ",correct[i]==ours[i])
+        if correct[i]==ours[i]: 
+            count_right += 1
+            pass
+        pass
+    return count_right
 
 if __name__ == "__main__":
     nltk.download('brown')
@@ -124,5 +140,4 @@ if __name__ == "__main__":
     wordMap, tagMap = getWordTagCount(corpus)
     mat_state, mat_obs, init_state = genMatrix(corpus, wordMap, tagMap)
     corpus_test = nltk.corpus.brown.tagged_sents(tagset='universal')[10150:10153]
-    
     predictions = predict(corpus_test, mat_state, mat_obs, init_state, wordMap, tagMap)
